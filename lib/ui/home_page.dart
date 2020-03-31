@@ -11,46 +11,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   static const String _BASE_URL =
     "https://api.giphy.com/v1/gifs/trending?api_key=ZZZf2FTnbTsAfPOLrBP7ymjm6Fw6VJ1b&limit=20&rating=G";
-  String _search, _offset;
-
-  Future<Map> _getGifs() async {
-    http.Response response;
-
-    if (_search != null) {
-      response = await http.get("https://api.giphy.com/v1/gifs/search"
-          "?api_key=ZZZf2FTnbTsAfPOLrBP7ymjm6Fw6VJ1b"
-          "&q=$_search"
-          "&limit=20"
-          "&offset=$_offset"
-          "&rating=G&lang=pt"
-      );
-      return json.decode(response.body);
-    }
-
-    response = await http.get(_BASE_URL);
-    return json.decode(response.body);
-  }
-
-  Widget _createGitTable(BuildContext context, AsyncSnapshot snapshot) {
-    return GridView.builder(
-      padding: EdgeInsets.all(10.0),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10.0,
-        mainAxisSpacing: 10.0,
-      ),
-      itemCount: snapshot.data['data'].length,
-      itemBuilder: (context, index) {
-        return GestureDetector(
-          child: Image.network(
-            snapshot.data['data'][index]['images']['fixed_height']['url'],
-            height: 300.0,
-            fit: BoxFit.cover,
-          ),
-        );
-      }
-    );
-  }
+  static const int _OFFSET_LIMIT = 19;
+  String _search;
+  int _offset = _OFFSET_LIMIT;
 
   @override
   void initState() {
@@ -81,6 +44,12 @@ class _HomePageState extends State<HomePage> {
               ),
               style: TextStyle(color: Colors.white, fontSize: 18.0),
               textAlign: TextAlign.center,
+              onSubmitted: (text) {
+                setState(() {
+                  _search = text;
+                  _offset = 0;
+                });
+              },
             ),
           ),
 
@@ -110,6 +79,74 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<Map> _getGifs() async {
+    http.Response response;
+
+    if (_search != null) {
+      response = await http.get("https://api.giphy.com/v1/gifs/search"
+          "?api_key=ZZZf2FTnbTsAfPOLrBP7ymjm6Fw6VJ1b"
+          "&q=$_search"
+          "&limit=$_OFFSET_LIMIT"
+          "&offset=$_offset"
+          "&rating=G&lang=pt"
+      );
+      return json.decode(response.body);
+    }
+
+    response = await http.get(_BASE_URL);
+    return json.decode(response.body);
+  }
+
+  int _getCount(List data) {
+    if (_search == null) {
+      return data.length;
+    }
+
+    return data.length + 1;
+  }
+
+  Widget _createGitTable(BuildContext context, AsyncSnapshot snapshot) {
+    return GridView.builder(
+        padding: EdgeInsets.all(10.0),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10.0,
+          mainAxisSpacing: 10.0,
+        ),
+        itemCount: _getCount(snapshot.data['data']),
+        itemBuilder: (context, index) {
+          if (_search == null || index < snapshot.data['data'].length) {
+            return GestureDetector(
+              child: Image.network(
+                snapshot.data['data'][index]['images']['fixed_height']['url'],
+                height: 300.0,
+                fit: BoxFit.cover,
+              ),
+            );
+          }
+          return Container(
+            child: GestureDetector(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(Icons.add, color: Colors.white, size: 70.0,),
+                  Text(
+                    'Load more',
+                    style: TextStyle(color: Colors.white, fontSize: 22.0,),
+                  )
+                ],
+              ),
+              onTap: () {
+                setState(() {
+                  _offset += _OFFSET_LIMIT;
+                });
+              },
+            ),
+          );
+        }
     );
   }
 }
