@@ -30,6 +30,9 @@ dependencies:
   ## share plugin
   share: ^0.6.1+1
 
+  ## transparent img plugin
+  transparent_image: ^1.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
